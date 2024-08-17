@@ -1,0 +1,21 @@
+[package]
+name = "corrosion"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matthew Lance Fuller <matthewlancefuller@gmail.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+rand = "0.3"
+
+[lib]
+name = "corrosion"
+crate-type = ["cdylib"]
+
+[profile.dev]
+rpath = true
+
+[profile.release]
+rpath = true
