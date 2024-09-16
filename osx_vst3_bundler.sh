@@ -43,9 +43,9 @@ else
 </plist>" > "bundles/$1.vst3/Contents/Info.plist"
 
     # move the provided library to the correct location
-    cp "$2" "bundles/$1.vst3/Contents/MacOS/$1"
+    cp -f "$2" "bundles/$1.vst3/Contents/MacOS/$1"
 
-    cp -R "bundles/$1.vst3" "/Library/Audio/Plug-Ins/VST3"
+    cp -Rf "bundles/$1.vst3" "/Library/Audio/Plug-Ins/VST3"
 
     echo "Created bundle target/debug/$1.vst3"
 fi
