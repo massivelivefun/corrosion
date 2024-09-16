@@ -9,6 +9,8 @@ use nih_plug::prelude::{ClapFeature, ClapPlugin, InitContext, ProcessContext, Vs
 
 use crate::corrosion_params::CorrosionParams;
 
+pub const MAX_BLOCK_SIZE: usize = 64;
+
 pub struct Corrosion {
     params: Arc<CorrosionParams>,
 }
@@ -73,19 +75,58 @@ impl Plugin for Corrosion {
         _aux: &mut AuxiliaryBuffers,
         _context: &mut impl ProcessContext<Self>
     ) -> ProcessStatus {
-        for channel_samples in buffer.iter_samples() {
-            // Smoothing is optionally built into the parameters themselves
-            let gain = self.params.distortion.smoothed.next();
+        // self.gain(buffer)
+        self.distortion(buffer)
+    }
 
-            for sample in channel_samples {
-                *sample *= gain;
+    fn deactivate(&mut self) {}
+}
+
+impl Corrosion {
+    // fn gain(&mut self, buffer: &mut Buffer) -> ProcessStatus {
+    //     for channel_samples in buffer.iter_samples() {
+    //         // Smoothing is optionally built into the parameters themselves
+    //         let gain = self.params.gain.smoothed.next();
+    //
+    //         for sample in channel_samples {
+    //             *sample *= gain;
+    //         }
+    //     }
+    //
+    //     ProcessStatus::Normal
+    // }
+
+    fn distortion(&mut self, buffer: &mut Buffer) -> ProcessStatus {
+        let mut cloned_buffer: Vec<Vec<f32>> = Vec::with_capacity(buffer.channels());
+
+        for channel in buffer.as_slice_immutable().iter() {
+            cloned_buffer.push((**channel).iter().cloned().collect::<Vec<f32>>());
+        }
+
+        for (cloned_channel, channel) in cloned_buffer.iter().zip(buffer.iter_samples()) {
+            for (cloned_sample, sample) in cloned_channel.iter().zip(channel) {
+                let smoothed_threshold = self.params.threshold.smoothed.next();
+                if *cloned_sample >= 0.0_f32 {
+                    *sample = cloned_sample.min(smoothed_threshold) / smoothed_threshold;
+                } else {
+                    *sample = cloned_sample.max(-smoothed_threshold) / smoothed_threshold;
+                }
             }
         }
 
         ProcessStatus::Normal
     }
 
-    fn deactivate(&mut self) {}
+    fn glitch(&mut self, buffer: &mut Buffer) -> ProcessStatus {
+        // let num_samples = buffer.samples();
+        // let output = buffer.as_slice();
+
+        // let mut next_event = context.next_event();
+        // let mut block_start: usize = 0;
+        // let mut block_end: usize = MAX_BLOCK_SIZE.min(num_samples);
+
+        ProcessStatus::Normal
+    }
 }
 
 impl ClapPlugin for Corrosion {
